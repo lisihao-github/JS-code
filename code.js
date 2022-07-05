@@ -1,7 +1,7 @@
 /*
  * @Author: 李思豪
  * @Date: 2022-07-04 13:40:14
- * @LastEditTime: 2022-07-04 16:33:41
+ * @LastEditTime: 2022-07-05 17:26:40
  * @Description: file content
  * @LastEditors: 李思豪
  */
@@ -18,7 +18,7 @@
  * CONTENT-TYPE:application/x-www-form-urlencoded
  * CONTENT-TYPE:multipart/form-data 用来提交文件
  */
-const _ajax = {
+ const _ajax = {
   get(ul, fn) {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", ul, true); // 第三个参数异步与否
@@ -168,3 +168,415 @@ function _curring(fn, args = []) {
   };
   return inner();
 }
+
+/** 实现一个 LRU缓存函数
+ * 有两个方法：
+ * 1. 获取数据 get - 如果密钥(key) 存在于缓存中, 则获取密钥的值(正数),否则返回 -1
+ * 2. 写入数据 put - 如果密钥已存在,则进行更新；不存在则插入;当缓存量达到上限,删除最久未使用数据
+ * eg:
+ * LRUCache cache = new LRUCache(2) // 缓存容量
+ * cache.put(1,1)
+ * cache.put(2,2)
+ * cache.get(1) // 返回1
+ * cache.put(3,3) // 该操作会使密钥 2 作废
+ * cache.get(2) // 返回-1
+ */
+
+class _LRUCache {
+  constructor(size) {
+    this.size = size;
+    this.cache = new Map();
+  }
+  get(key) {
+    if (this.cache.has(key)) {
+      const val = this.cache.get(key);
+      this.cache.delete(key);
+      this.cache.set(key, val);
+      return val;
+    } else {
+      return -1;
+    }
+  }
+  put(key, val) {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+    this.cache.set(key, val);
+    if (this.cache.size > this.size) {
+      this.cache.delete(this.cache.values().next().value);
+    }
+  }
+}
+
+/** 实现发布订阅
+ *
+ */
+class _EventEmitter {
+  constructor() {
+    this.events = {};
+  }
+  on(type, callBack) {
+    if (!this.events[type]) {
+      this.events[type] = [callBack];
+    } else {
+      this.events[type].push(callBack);
+    }
+  }
+  off(type, callBack) {
+    if (!this.events[type]) return;
+    this.events[type] = this.events[type].filter(fn => fn != callBack);
+  }
+  once(type, callBack) {
+    function fn() {
+      callBack();
+      this.off(type, callBack);
+    }
+    this.on(type, fn);
+  }
+  emit(type, ...rest) {
+    this.events[type] && this.events[type].forEach(fn => fn.apply(this, rest));
+  }
+}
+
+/** 实现 JSON.parse (待补充)
+ *
+ */
+function _parse(json) {
+  return eval(`(${json})`);
+}
+
+/** 将 DOM 转换成树结构对象 (待补充)
+ *
+ */
+function _domTree(dom) {
+  let obj = {};
+  obj.tag = dom.tagName;
+  obj.children = [];
+  dom.childNodes.forEach(child => obj.children.push(_domTree(child)));
+  return obj;
+}
+
+/** 将树结构转换为 DOM
+ *
+ */
+function _render(vnode) {
+  // 如果是数字类型转化为字符串
+  if (typeof vnode === "number") {
+    vnode = String(vnode);
+  }
+  // 字符串类型直接就是文本节点
+  if (typeof vnode === "string") {
+    return document.createTextNode(vnode);
+  }
+  // 普通 DOM
+  const dom = document.createElement(vnode.tag);
+  if (vnode.attrs) {
+    Object.keys(vnode.attrs).forEach(key => {
+      const value = vnode.attrs[key];
+      dom.setAttribute(key, value);
+    });
+  }
+  // 子数组进行递归操作
+  vnode.children.forEach(child => dom.appendChild(_render(child)));
+  return dom;
+}
+
+/** 判断一个对象有环引用(未)
+ *
+ */
+
+/** 计算一个对象层数 (未)
+ *
+ */
+
+/** 对象的的扁平化
+ *
+ */
+
+/** 实现 (a == 1 && a == 2 && a == 3) 为 true
+ *
+ */
+// 方法一:
+var a = {
+  i: 1,
+  toString: function () {
+    return a.i++;
+  }
+};
+
+// 方法二：
+// var val = 0;
+// Object.defineProperty(window, "a", {
+//   get: function () {
+//     return ++val;
+//   }
+// });
+
+/** 实现 lazyMan 函数 (未)
+ *
+ */
+// class _lazyMan {
+//   constructor(name) {
+//     this.name = name;
+//   }
+// }
+
+/** 实现 add 函数 (未)
+ *
+ */
+
+/** 实现一个深拷贝 (待补充)
+ *
+ */
+function _deepCloneOne(source) {
+  if (typeof source !== "object" || source == null) return source;
+  let targetObj = Array.isArray(source) ? [] : {};
+  Object.keys(source).forEach(keys => {
+    if (source[keys] && typeof source[keys] === "object") {
+      targetObj[keys] = _deepCloneOne(source[keys]);
+    } else {
+      targetObj[keys] = source[keys];
+    }
+  });
+  return targetObj;
+}
+
+/** 实现 Promise
+ *
+ */
+
+const STATUS = {
+  PENDING: "PENDING",
+  FUFILLED: "FULFILLED",
+  REJECTED: "REJECTED"
+};
+class _Promise {
+  constructor(executor) {
+    this.status = STATUS.PENDING;
+    this.value = undefined;
+    this.reason = undefined;
+    this.onResolvedCallbacks = [];
+    this.onRejectedCallbacks = [];
+
+    const resolve = value => {
+      if (this.status === STATUS.PENDING) {
+        this.status = STATUS.FUFILLED;
+        this.value = value;
+        this.onResolvedCallbacks.forEach(fn => fn());
+      }
+    };
+    const reject = reason => {
+      if (this.status === STATUS.PENDING) {
+        this.status = STATUS.REJECTED;
+        this.reason = reason;
+        this.onRejectedCallbacks.forEach(fn => fn());
+      }
+    };
+    try {
+      executor(resolve, reject);
+    } catch (e) {
+      reject(e);
+    }
+  }
+  // FUFILLED
+  then(onFufilled, onRejected) {
+    // 解决 onFulfilled  和 onRejected 没有传值的问题
+    onFufilled = typeof onFufilled === "function" ? onFufilled : x => x;
+    // 因为错误的值要让后面访问到，所以这里也要抛出错误，不然会在之后 then 的 resolve 中捕获
+    onRejected =
+      typeof onRejected === "function"
+        ? onRejected
+        : err => {
+            throw err;
+          };
+    // 每次调用 then 都返回一个 promise
+    let promise2 = new Promise((resolve, reject) => {
+      if (this.status === STATUS.FUFILLED) {
+        setTimeout(() => {
+          try {
+            let x = onFufilled(this.value);
+            _resolvePromise(promise2, x, resolve, reject);
+          } catch (e) {
+            reject(e);
+          }
+        }, 0);
+      }
+      if (this.status === STATUS.REJECTED) {
+        setTimeout(() => {
+          try {
+            let x = onRejected(this.reason);
+            _resolvePromise(promise2, x, resolve, reject);
+          } catch (e) {
+            reject(e);
+          }
+        }, 0);
+      }
+      if (this.status === STATUS.PENDING) {
+        this.onResolvedCallbacks.push(() => {
+          setTimeout(() => {
+            try {
+              let x = onFufilled(this.value);
+              _resolvePromise(promise2, x, resolve, reject);
+            } catch (e) {
+              reject(e);
+            }
+          }, 0);
+        });
+        this.onRejectedCallbacks.push(() => {
+          setTimeout(() => {
+            try {
+              let x = onRejected(this.reason);
+              _resolvePromise(promise2, x, resolve, reject);
+            } catch (e) {
+              reject(e);
+            }
+          }, 0);
+        });
+      }
+    });
+    return promise2;
+  }
+}
+function _resolvePromise(promise2, x, resolve, reject) {
+  // 自己等待自己完成是错误的实现，用一个类型错误，结束掉 promise  Promise/A+ 2.3.1
+  if (promise2 === x) {
+    return reject(
+      new TypeError("Chaining cycle detected for promise #<Promise>")
+    );
+  }
+  if ((typeof x === "object" && x !== null) || typeof x === "function") {
+    let called;
+    try {
+      // 为了判断 resolve 过的就不用再 reject 了（比如 reject 和 resolve 同时调用的时候）  Promise/A+ 2.3.3.1
+      let then = x.then;
+      if (typeof then === "function") {
+        then.call(
+          x,
+          y => {
+            // 根据 promise 的状态决定是成功还是失败
+            if (called) return;
+            called = true;
+            // 递归解析的过程（因为可能 promise 中还有 promise） Promise/A+ 2.3.3.3.1
+            _resolvePromise(promise2, y, resolve, reject);
+          },
+          r => {
+            // 只要失败就失败 Promise/A+ 2.3.3.3.2
+            if (called) return;
+            called = true;
+            reject(r);
+          }
+        );
+      } else {
+        // 如果 x.then 是个普通值就直接返回 resolve 作为结果  Promise/A+ 2.3.3.4
+        resolve(x);
+      }
+    } catch (e) {
+      if (called) return;
+      called = true;
+      reject(e);
+    }
+  } else {
+    resolve(x);
+  }
+}
+
+/** 实现 async/await
+ *  - await 只能在 async 函数中使用, 不然会报错
+ *  - async 函数返回的是一个 Promise 对象, 有无值看有无 return 值
+ *  - await 后面最好是接 Promise, 虽然接其他值也能达到排队效果
+ *  - async/await 作用是 用同步方式, 执行异步操作
+ */
+function _generatorToAsync(generatorFn) {
+  return function () {
+    const gen = generatorFn.apply(this, arguments); // gen有可能传参
+    // 返回一个 promise
+    return new Promise((resolve, reject) => {
+      function go(key, arg) {
+        let res;
+        try {
+          res = gen[key](arg); // 这里有可能会执行返回 reject 状态的 promise
+        } catch (err) {
+          return reject(err);
+        }
+
+        // 解构获得 value 和 done
+        const { value, done } = res;
+        if (done) {
+          // 如果 done 为 true, 说明走完了, 进行 resolve(value)
+          return resolve(value);
+        } else {
+          return Promise.resolve(value).then(
+            val => go("next", val),
+            err => go("throw", err)
+          );
+        }
+      }
+      go("next");
+    });
+  };
+}
+
+function fn(nums) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(nums * 2);
+    }, 1000);
+  });
+}
+function* _gen() {
+  const num1 = yield fn(1);
+  console.log(num1); // 2
+  const num2 = yield fn(num1);
+  console.log(num2); // 4
+  const num3 = yield fn(num2);
+  console.log(num3); // 8
+  return num3;
+}
+// const genToAsync = _generatorToAsync(gen);
+// const asyncRes = genToAsync();
+// console.log(asyncRes); // Promise
+// asyncRes.then(res => console.log(res)); // 8
+
+// --------------------------------------------------- Array -----
+
+const players = [
+  { name: "科比", num: 24 },
+  { name: "詹姆斯", num: 23 },
+  { name: "保罗", num: 3 },
+  { name: "威少", num: 0 },
+  { name: "杜兰特", num: 35 }
+];
+
+/** 实现 forEach
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
+Array.prototype._forEach = function (callBack) {
+  for (let i = 0; i < this.length; i++) {
+    callBack(this[i], i, this);
+  }
+};
+// players._forEach((item, index, arr) => {
+//   console.log(item, index);
+// });
+
+/** 实现 map
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
+
+Array.prototype._map = function (callBack) {
+  let res = [];
+  for (let i = 0; i < this.length; i++) {
+    res.push(callBack(this[i], i, this));
+  }
+  return res;
+};
+
+/** 实现 filter
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
