@@ -1,7 +1,7 @@
 /*
  * @Author: 李思豪
  * @Date: 2022-07-04 13:40:14
- * @LastEditTime: 2022-07-05 17:26:40
+ * @LastEditTime: 2022-07-06 16:55:55
  * @Description: file content
  * @LastEditors: 李思豪
  */
@@ -580,3 +580,165 @@ Array.prototype._map = function (callBack) {
  * - index 索引
  * - arr 数组本身
  */
+Array.prototype._filter = function (callback) {
+  let res = [];
+  for (let i = 0; i < this.length; i++) {
+    callback(this[i], i, this) && res.push(this[i]);
+  }
+  return res;
+};
+
+/** 实现 every
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
+Array.prototype._every = function (callback) {
+  let flag = true;
+  for (let i = 0; i < this.length; i++) {
+    flag = callback(this[i], i);
+    if (!flag) break;
+  }
+  return flag;
+};
+
+/** 实现 some
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
+Array.prototype._some = function (callback) {
+  let flag = false;
+  for (let i = 0; i < this.length; i++) {
+    let flag = callback(this[i], i, this);
+    if (flag) break;
+  }
+  return flag;
+};
+
+/** 实现 reduce
+ * - pre 前一项
+ * - next 下一项
+ * - index 索引
+ * - arr 数组本身
+ */
+Array.prototype._reduce = function (callback, ...args) {
+  let start = 0,
+    pre;
+  if (args.length) {
+    pre = args[0];
+  } else {
+    pre = this[0];
+    start = 1;
+  }
+  for (let i = start; i < this.length; i++) {
+    pre = callback(pre, this[i], i, this);
+  }
+  return pre;
+};
+
+/** findIndex
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
+Array.prototype._findIndex = function (callback) {
+  for (let i = 0; i < this.length; i++) {
+    if (callback(this[i], i, this)) {
+      return i;
+    }
+  }
+  return -1;
+};
+
+/** find
+ * - item 遍历项
+ * - index 索引
+ * - arr 数组本身
+ */
+Array.prototype._find = function (callback) {
+  for (let i = 0; i < this.length; i++) {
+    if (callback(this[i], i, this)) {
+      return this[i];
+    }
+  }
+  return undefined;
+};
+
+/** fill
+ * - initValue 填充的值
+ * - start 开始索引,默认为 0
+ * - end 结束索引,默认 length
+ */
+Array.prototype._fill = function (value, start = 0, end) {
+  end = end || this.length;
+  for (let i = start; i < end; i++) {
+    this[i] = value;
+  }
+  return this;
+};
+
+/** includes (未)
+ *
+ */
+Array.prototype._includes = function (value, start = 0) {
+  if (start < 0) start = this.length + start;
+  const isNaN = Number.isNaN(value);
+  for (let i = start; i < this.length; i++) {
+    if (this[i] === value || (isNaN && Number.isNaN(this[i]))) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * join (未)
+ */
+/**
+ * flat (未)
+ */
+/**
+ * splice (未)
+ */
+
+// --------------------------------------------------- Object -----
+const _obj = {
+  name: "林三心",
+  age: 22,
+  gender: "男"
+};
+
+/** entries
+ * 作用：将对象转成键值对数组
+ */
+Object.prototype._entries = function (obj) {
+  const res = [];
+  for (let key in obj) {
+    Object.prototype.hasOwnProperty.call(obj, key) && res.push([key, obj[key]]);
+  }
+  return res;
+};
+
+/** fromEntries
+ * 用处：跟entries相反，将键值对数组转成对象
+ */
+Object.prototype.fromEntries = function (arr) {
+  const obj = {};
+  for (let i = 0; i < arr.length; i++) {
+    const [key, value] = arr[i];
+    obj[key] = value;
+  }
+  return obj;
+};
+
+/** keys
+ * 作用：将对象的key转成一个数组合集
+ */
+Object.prototype._entries = function (obj) {
+  const res = [];
+  for (let key in obj) {
+    Object.prototype.hasOwnProperty.call(obj, key) && res.push([key]);
+  }
+  return res;
+};
