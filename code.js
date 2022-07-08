@@ -1,7 +1,7 @@
 /*
  * @Author: 李思豪
  * @Date: 2022-07-04 13:40:14
- * @LastEditTime: 2022-07-07 17:23:09
+ * @LastEditTime: 2022-07-08 15:36:18
  * @Description: file content
  * @LastEditors: 李思豪
  */
@@ -1083,24 +1083,151 @@ Array.prototype._includes = function (value, start = 0) {
 };
 
 /**
- * join (未)
+ * join
+ * @param {*} separator
+ * @returns 一个所有数组元素连接的字符串。如果 arr.length 为 0，则返回空字符串。
+ * 描述：
+ * 所有的数组元素被转换成字符串，再用一个分隔符将这些字符串连接起来。
+ *- separator 指定一个字符串来分隔数组的每个元素。如果需要，将分隔符转换为字符串。如果缺省该值，数组元素用逗号（,）分隔。如果separator是空字符串 ("")，则所有元素之间都没有任何字符。
  */
-/**
- * flat (未)
- */
-/**
- * splice (未)
- */
-
-// --------------------------------------------------- Object -----
-const _obj = {
-  name: "林三心",
-  age: 22,
-  gender: "男"
+Array.prototype._join = function (separator) {
+  let str = "";
+  for (let i = 0; i < this.length; i++) {
+    str = i === 0 ? `${str}${this[i]}` : `${str}${separator}${this[i]}`;
+  }
+  return separator;
 };
 
-/** entries
- * 作用：将对象转成键值对数组
+/**
+ * flat (待完善)
+ * @param {*} depth
+ * @returns 一个包含将数组与子数组中所有元素的新数组。
+ * 描述：
+ * 会按照一个可指定的深度递归遍历数组，并将所有元素与遍历到的子数组中的元素合并为一个新数组返回。
+ *- depth 指定要提取嵌套数组的结构深度，默认值为 1。
+ */
+Array.prototype._flat = function (depth = 1) {
+  console.log("this", this);
+  let arr = this;
+  let i = 0;
+  while (this.some(item => Array.isArray(item))) {
+    arr = [].concat(...arr);
+    i++;
+    if (i >= depth) break;
+  }
+  return arr;
+};
+
+/**
+ * splice
+ * @param {*} start 指定修改的开始位置（从 0 计数）。
+ * @param {*} deleteCount 表示要移除的数组元素的个数。
+ * @param  {...any} values 要添加进数组的元素，从start 位置开始。如果不指定，则 splice() 将只删除数组元素。
+ * @returns
+ */
+Array.prototype.splice = function (startIndex, deleteCount, ...addElements) {
+  let argumentsLen = arguments.length;
+  let array = Object(this);
+  let len = array.length;
+  let deleteArr = new Array(deleteCount);
+
+  const sliceDeleteElements = (array, startIndex, deleteCount, deleteArr) => {
+    for (let i = 0; i < deleteCount; i++) {
+      let index = startIndex + i;
+      if (index in array) {
+        let current = array[index];
+        deleteArr[i] = current;
+      }
+    }
+  };
+  const movePostElements = (
+    array,
+    startIndex,
+    len,
+    deleteCount,
+    addElements
+  ) => {
+    // 如果添加的元素和删除的元素个数相等，相当于元素的替换，数组长度不变，被删除元素后面的元素不需要挪动
+    if (deleteCount === addElements.length) return;
+    // 如果添加的元素和删除的元素个数不相等，则移动后面的元素
+    else if (deleteCount > addElements.length) {
+      // 删除的元素比新增的元素多，那么后面的元素整体向前挪动
+      // 一共需要挪动 len - startIndex - deleteCount 个元素
+      for (let i = startIndex + deleteCount; i < len; i++) {
+        let fromIndex = i;
+        // 将要挪动到的目标位置
+        let toIndex = i - (deleteCount - addElements.length);
+        if (fromIndex in array) {
+          array[toIndex] = array[fromIndex];
+        } else {
+          delete array[toIndex];
+        }
+      }
+      // 注意注意！这里我们把后面的元素向前挪，相当于数组长度减小了，需要删除冗余元素
+      // 目前长度为 len + addElements - deleteCount
+      for (let i = len - 1; i >= len + addElements.length - deleteCount; i--) {
+        delete array[i];
+      }
+    } else if (deleteCount < addElements.length) {
+      // 删除的元素比新增的元素少，那么后面的元素整体向后挪动
+      // 思考一下: 这里为什么要从后往前遍历？从前往后会产生什么问题？
+      for (let i = len - 1; i >= startIndex + deleteCount; i--) {
+        let fromIndex = i;
+        // 将要挪动到的目标位置
+        let toIndex = i + (addElements.length - deleteCount);
+        if (fromIndex in array) {
+          array[toIndex] = array[fromIndex];
+        } else {
+          delete array[toIndex];
+        }
+      }
+    }
+  };
+  const computeStartIndex = (startIndex, len) => {
+    // 处理索引负数的情况
+    if (startIndex < 0) {
+      return startIndex + len > 0 ? startIndex + len : 0;
+    }
+    return startIndex >= len ? len : startIndex;
+  };
+  const computeDeleteCount = (startIndex, len, deleteCount, argumentsLen) => {
+    // 删除数目没有传，默认删除startIndex及后面所有的
+    if (argumentsLen === 1) return len - startIndex;
+    // 删除数目过小
+    if (deleteCount < 0) return 0;
+    // 删除数目过大
+    if (deleteCount > len - deleteCount) return len - startIndex;
+    return deleteCount;
+  };
+  startIndex = computeStartIndex(startIndex, len);
+  deleteCount = computeDeleteCount(startIndex, len, deleteCount, argumentsLen);
+  // 判断 sealed 对象和 frozen 对象, 即 密封对象 和 冻结对象
+  if (Object.isSealed(array) && deleteCount !== addElements.length) {
+    throw new TypeError("the object is a sealed object!");
+  } else if (
+    Object.isFrozen(array) &&
+    (deleteCount > 0 || addElements.length > 0)
+  ) {
+    throw new TypeError("the object is a frozen object!");
+  }
+  // 拷贝删除的元素
+  sliceDeleteElements(array, startIndex, deleteCount, deleteArr);
+  // 移动删除元素后面的元素
+  movePostElements(array, startIndex, len, deleteCount, addElements);
+  // 插入新元素
+  for (let i = 0; i < addElements.length; i++) {
+    array[startIndex + i] = addElements[i];
+  }
+  array.length = len - deleteCount + addElements.length;
+  return deleteArr;
+};
+
+// --------------------------------------------------- Object -----
+
+/**
+ * entries
+ * @param {*} obj
+ * @returns 返回一个新的Array Iterator对象，该对象包含数组中每个索引的键/值对。
  */
 Object.prototype._entries = function (obj) {
   const res = [];
@@ -1110,8 +1237,12 @@ Object.prototype._entries = function (obj) {
   return res;
 };
 
-/** fromEntries
- * 用处：跟entries相反，将键值对数组转成对象
+/**
+ * fromEntries
+ * @param {*} arr
+ * @returns
+ * 描述：
+ * 把键值对列表转换为一个对象。
  */
 Object.prototype.fromEntries = function (arr) {
   const obj = {};
@@ -1122,21 +1253,28 @@ Object.prototype.fromEntries = function (arr) {
   return obj;
 };
 
-/** keys
- * 作用：将对象的key转成一个数组合集
+/**
+ * keys
+ * @param {*} obj 要返回其枚举自身属性的对象。
+ * @returns 一个表示给定对象的所有可枚举属性的字符串数组。
+ * 描述：
+ * Object.keys 返回一个所有元素为字符串的数组，其元素来自于从给定的 object 上面可直接枚举的属性。这些属性的顺序与手动遍历该对象属性时的一致。
  */
-Object.prototype._entries = function (obj) {
+Object.prototype._keys = function (obj) {
   const res = [];
   for (let key in obj) {
-    Object.prototype.hasOwnProperty.call(obj, key) && res.push([key]);
+    Object.prototype.hasOwnProperty.call(obj, key) && res.push(key);
   }
   return res;
 };
 
-/** values
- * 用处：将对象的所有值转成数组合集
+/**
+ * values
+ * @param {*} obj 被返回可枚举属性值的对象。
+ * @returns 一个包含对象自身的所有可枚举属性值的数组。
+ * 描述：
+ * Object.values()返回一个数组，其元素是在对象上找到的可枚举属性值。属性的顺序与通过手动循环对象的属性值所给出的顺序相同。
  */
-
 Object.prototype._values = function (obj) {
   const values = [];
   for (let key in obj) {
@@ -1145,8 +1283,13 @@ Object.prototype._values = function (obj) {
   return values;
 };
 
-/** instanceOf
- * 用处：A instanceOf B，判断A是否经过B的原型链
+/**
+ * instanceOf
+ * @param {*} parent
+ * @param {*} child
+ * @returns
+ * 描述：
+ * 检测构造函数的 prototype 属性是否出现在某个实例对象的原型链上。
  */
 Object.prototype._instanceOf = function (parent, child) {
   const pp = parent.prototype;
@@ -1160,8 +1303,13 @@ Object.prototype._instanceOf = function (parent, child) {
   return false;
 };
 
-/** is
- * 用处：Object.is(a, b)，判断a是否等于b
+/**
+ * Object.is
+ * @param {*} x 被比较的第一个值。
+ * @param {*} y 被比较的第二个值。
+ * @returns 一个布尔值，表示两个参数是否是同一个值。
+ * 描述：
+ * Object.is() 方法判断两个值是否为同一个值，如果满足以下任意条件则两个值相等：NaN === NaN /  +0!==-0
  */
 Object.prototype._is = function (x, y) {
   if (x === y) {
@@ -1172,8 +1320,13 @@ Object.prototype._is = function (x, y) {
   return x !== x && y !== y;
 };
 
-/** Object.assign
- *
+/**
+ * Object.assign
+ * @param {*} target 目标对象，接收源对象属性的对象，也是修改后的返回值。
+ * @param  {...any} args 源对象，包含将被合并的属性。
+ * @returns 目标对象。
+ * 描述：
+ * 所有可枚举（Object.propertyIsEnumerable() 返回 true）和自有（Object.hasOwnProperty() 返回 true）属性从一个或多个源对象复制到目标对象，返回修改后的对象。
  */
 Object.prototype._assign = function (target, ...args) {
   if (target === null || target === undefined) {
@@ -1191,8 +1344,14 @@ Object.prototype._assign = function (target, ...args) {
 
 // --------------------------------------------------- Function -----
 
-/** call
- *
+/**
+ * call
+ * @param {*} asThis(可选) 在 function 函数运行时使用的 this 值。
+ * @param {*} args(可选) 指定的参数列表。
+ * @returns 使用调用者提供的 this 值和参数调用该函数的返回值。若该方法没有返回值，则返回 undefined。
+ * 描述：
+ * call() 允许为不同的对象分配和调用属于一个对象的函数/方法。
+ * call() 提供新的 this 值给当前调用的函数/方法。你可以使用 call 来实现继承：写一个方法，然后让另外一个新的对象来继承它（而不是在新对象中再写一次这个方法）。
  */
 Function.prototype._callES5 = function (asThis) {
   asThis = asThis || Window;
@@ -1218,8 +1377,11 @@ Function.prototype._callES6 = function (asThis, ...args) {
   return res;
 };
 
-/** apply
- *
+/**
+ * apply
+ * @param {*} asThis 在 func 函数运行时使用的 this 值。
+ * @param {*} arr 一个数组或者类数组对象，其中的数组元素将作为单独的参数传给 func 函数。
+ * @returns 调用有指定 this 值和参数的函数的结果。
  */
 Function.prototype._applyES5 = function (asThis, arr) {
   asThis = asThis || Window;
@@ -1251,8 +1413,13 @@ Function.prototype._applyES6 = function (asThis, arr = []) {
   return res;
 };
 
-/** bind (待修正)
- *
+/**
+ * bind
+ * @param {*} asThis 调用绑定函数时作为 this 参数传递给目标函数的值。
+ * @param {*} args 当目标函数被调用时，被预置入绑定函数的参数列表中的参数。
+ * @returns 返回一个原函数的拷贝，并拥有指定的 this 值和初始参数。
+ * 描述：
+ * bind() 函数会创建一个新的绑定函数（bound function，BF）。绑定函数是一个 exotic function object（怪异函数对象，ECMAScript 2015 中的术语），它包装了原函数对象。调用绑定函数通常会导致执行包装函数。
  */
 Function.prototype._bindES5 = function (asThis) {
   // 根据MDN的官方建议需要加上这一条,检测一下数据类型
@@ -1275,7 +1442,6 @@ Function.prototype._bindES5 = function (asThis) {
       args.concat(Array.prototype.splice.call(arguments, 0))
     );
   };
-  console.log("args", args);
   // 修改返回函数的 prototype 为绑定函数的 prototype，实例就可以继承绑定函数的原型中的值
   fNop.prototype = this.prototype;
   fNnc.prototype = new fNop();
@@ -1292,8 +1458,14 @@ Function.prototype._bindES6 = function (asThis, ...args) {
 };
 
 // --------------------------------------------------- String -----
-/** slice
- *
+
+/**
+ * slice
+ * @param {*} start 从该索引（以 0 为基数）处开始提取原字符串中的字符。
+ * @param {*} end 可选。在该索引（以 0 为基数）处结束提取字符串。
+ * @returns 返回一个从原字符串中提取出来的新字符串
+ * 描述：
+ * 提取某个字符串的一部分，并返回一个新的字符串，且不会改动原字符串。
  */
 String.prototype._slice = function (start = 0, end) {
   start = start < 0 ? this.length + start : start;
@@ -1306,20 +1478,8 @@ String.prototype._slice = function (start = 0, end) {
   return str;
 };
 
-/** substr
- *
- */
-String.prototype._substr = function (start, length) {
-  if (length < 0) return "";
-  start = start < 0 ? this.length - start : start;
-  length =
-    (!length && length !== 0) || length > this.length - start
-      ? this.length
-      : start + length;
-};
-
 /**
- * substring (已验证)
+ * substring
  * @param {*} start 需要截取的第一个字符的索引，该索引位置的字符作为返回的字符串的首字母。
  * @param {*} end 可选。一个 0 到字符串长度之间的整数，以该数字为索引的字符不包含在截取的字符串内。
  * @returns 包含给定字符串的指定部分的新字符串。
