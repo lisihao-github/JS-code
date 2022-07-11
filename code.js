@@ -1,7 +1,7 @@
 /*
  * @Author: 李思豪
  * @Date: 2022-07-04 13:40:14
- * @LastEditTime: 2022-07-08 15:36:18
+ * @LastEditTime: 2022-07-11 15:38:18
  * @Description: file content
  * @LastEditors: 李思豪
  */
@@ -145,10 +145,12 @@ function _setInterval(fn, delay) {
     fn();
     timer = setTimeout(interval, delay);
   };
-  interval();
-  _setInterval.cancel = () => {
-    clearInterval(timer);
-  };
+  _setTimeout(interval, delay)
+  return {
+    cancel : () => {
+      clearInterval(timer);
+    }
+  }
 }
 
 /**
@@ -180,13 +182,15 @@ function _compose(...fns) {
  * @param {*} args
  * @returns
  */
-function _curring(fn, args = []) {
+function _curring(fn, ...args) {
+  args = Array.isArray(args) ? args :[...args]
   const inner = (arr = []) => {
     args.push(...arr);
     return args.length >= fn.length ? fn(...args) : (...args) => inner(args);
   };
   return inner();
 }
+
 
 /**
  * 实现一个 LRU缓存函数
@@ -368,8 +372,8 @@ function _loopGetLevel(obj) {
 // };
 // console.log(_loopGetLevel(obj)); // 4
 
-/** 对象的的扁平化
- *
+/** 
+ * 对象的的扁平化
  */
 function _objFlatter(obj) {
   let isObj = function (obj) {
@@ -425,8 +429,8 @@ Object.defineProperty(this, "a", {
   }
 });
 
-/** 实现 lazyMan 函数
- *
+/** 
+ * 实现 lazyMan 函数
  */
 class _LazyMan {
   constructor(name) {
@@ -1449,10 +1453,8 @@ Function.prototype._bindES5 = function (asThis) {
 };
 
 Function.prototype._bindES6 = function (asThis, ...args) {
-  console.log("xxx", args);
   const _this = this;
   return function (...arg) {
-    console.log("jjjj", arg);
     return _this.apply(asThis, ...args, ...arg);
   };
 };
@@ -1500,3 +1502,4 @@ String.prototype._substring = function (start = 0, end) {
   }
   return str;
 };
+
