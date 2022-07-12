@@ -1,7 +1,7 @@
 /*
  * @Author: 李思豪
  * @Date: 2022-07-04 13:40:14
- * @LastEditTime: 2022-07-11 15:38:18
+ * @LastEditTime: 2022-07-12 10:53:35
  * @Description: file content
  * @LastEditors: 李思豪
  */
@@ -37,7 +37,7 @@
     xhr.send(data);
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
-        fn(xhr.statusText);
+        fn(xhr.responseText);
       }
     };
   }
