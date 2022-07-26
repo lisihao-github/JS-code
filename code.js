@@ -1,7 +1,7 @@
 /*
  * @Author: 李思豪
  * @Date: 2022-07-04 13:40:14
- * @LastEditTime: 2022-07-12 10:53:35
+ * @LastEditTime: 2022-07-18 17:20:54
  * @Description: file content
  * @LastEditors: 李思豪
  */
@@ -85,7 +85,7 @@ function _instanceof(target, origin) {
 function _debounce(fn, delay) {
   let timer = null;
   return (...args) => {
-    if (timer) clearInterval(timer);
+    if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       fn.apply(this, args);
     }, delay);
@@ -145,7 +145,7 @@ function _setInterval(fn, delay) {
     fn();
     timer = setTimeout(interval, delay);
   };
-  _setTimeout(interval, delay)
+  setTimeout(interval, delay)
   return {
     cancel : () => {
       clearInterval(timer);
@@ -729,6 +729,7 @@ _Promise.race = function (promises) {
   return new Promise((resolve, reject) => {
     promises.forEach(p => {
       if (p instanceof Promise) {
+        // 这里使用 Promise.resolve 包了一下，以防传递了 non-promise
         Promise.resolve(p).then(resolve).catch(reject);
       } else {
         resolve(promises);
